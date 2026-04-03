@@ -1,0 +1,16 @@
+[project]
+name = "mcp-searchatlas"
+version = "0.1.0"
+description = "MCP server for Search Atlas SEO tools"
+requires-python = ">=3.10"
+dependencies = [
+    "mcp>=1.0.0",
+    "httpx>=0.27.0",
+]
+
+[project.scripts]
+mcp-searchatlas = "mcp_searchatlas.server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
