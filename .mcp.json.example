@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "searchatlas": {
+      "url": "https://mcp.searchatlas.com/api/v1/mcp",
+      "headers": {
+        "X-API-KEY": "YOUR_SEARCHATLAS_API_KEY"
+      }
+    }
+  }
+}

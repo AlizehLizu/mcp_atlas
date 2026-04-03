@@ -1,0 +1,14 @@
+# MCP config contains secrets — copy .mcp.json.example and add your key
+.mcp.json
+
+# Claude Code local settings
+.claude/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.eggs/
+*.egg-info/
+dist/
+build/
