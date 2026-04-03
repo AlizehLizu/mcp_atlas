@@ -292,9 +292,18 @@ async def _dispatch(client: httpx.AsyncClient, name: str, args: dict) -> dict:
 
 # ── Entry point ───────────────────────────────────────────────────────────────
 
+async def _main():
+    async with stdio_server() as (read_stream, write_stream):
+        await server.run(
+            read_stream,
+            write_stream,
+            server.create_initialization_options(),
+        )
+
+
 def main():
     import asyncio
-    asyncio.run(stdio_server(server))
+    asyncio.run(_main())
 
 
 if __name__ == "__main__":
