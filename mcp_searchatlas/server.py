@@ -1,6 +1,14 @@
-"""MCP server for Search Atlas SEO platform."""
+"""MCP server for Search Atlas SEO platform.
+
+Supports two transports:
+  - stdio  (default, for Claude Desktop)
+  - HTTP/SSE via Starlette + uvicorn (for Railway / remote hosting)
+
+Set the environment variable TRANSPORT=sse to enable HTTP mode.
+"""
 
 import os
+import asyncio
 import httpx
 import json
 from mcp.server import Server
@@ -290,9 +298,42 @@ async def _dispatch(client: httpx.AsyncClient, name: str, args: dict) -> dict:
         return {"error": f"Unknown tool: {name}"}
 
 
+# ── HTTP/SSE transport (Railway) ──────────────────────────────────────────────
+
+def build_sse_app():
+    """Build a Starlette app that serves the MCP server over SSE."""
+    from starlette.applications import Starlette
+    from starlette.responses import JSONResponse
+    from starlette.routing import Mount, Route
+    from mcp.server.sse import SseServerTransport
+
+    sse = SseServerTransport("/messages/")
+
+    async def handle_sse(request):
+        async with sse.connect_sse(
+            request.scope, request.receive, request._send
+        ) as streams:
+            await server.run(
+                streams[0],
+                streams[1],
+                server.create_initialization_options(),
+            )
+
+    async def health(request):
+        return JSONResponse({"status": "ok", "server": "searchatlas-mcp"})
+
+    return Starlette(
+        routes=[
+            Route("/health", health),
+            Route("/sse", handle_sse),
+            Mount("/messages/", app=sse.handle_post_message),
+        ]
+    )
+
+
 # ── Entry point ───────────────────────────────────────────────────────────────
 
-async def _main():
+async def _run_stdio():
     async with stdio_server() as (read_stream, write_stream):
         await server.run(
             read_stream,
@@ -302,8 +343,15 @@ async def _main():
 
 
 def main():
-    import asyncio
-    asyncio.run(_main())
+    transport = os.environ.get("TRANSPORT", "stdio").lower()
+
+    if transport == "sse":
+        import uvicorn
+        port = int(os.environ.get("PORT", 8000))
+        app = build_sse_app()
+        uvicorn.run(app, host="0.0.0.0", port=port)
+    else:
+        asyncio.run(_run_stdio())
 
 
 if __name__ == "__main__":
